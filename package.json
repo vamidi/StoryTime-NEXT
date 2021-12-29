@@ -1,0 +1,92 @@
+{
+  "name": "storytime-prisma",
+  "version": "2020.1.6f3",
+  "license": "MIT",
+  "author": "Valencio Hoffman",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vamidi/StoryTime-PRISMA.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vamidi/StoryTime-PRISMA/issues"
+  },
+  "keywords": [
+    "next",
+    "nextjs",
+    "vercel",
+    "prisma",
+    "nodejs",
+    "typescript"
+  ],
+  "private": true,
+  "scripts": {
+    "conventional-changelog": "conventional-changelog",
+    "postinstall": "patch-package",
+    "postinstall:web": "node postinstall-web",
+    "dev": "next dev",
+    "start": "next dev",
+    "start:prod": "next start",
+    "build": "npm run postinstall:web -- --environment=prod && next build",
+    "export": "next export",
+    "lint": "next lint",
+    "docs": "compodoc -p src/tsconfig.app.json -d docs",
+    "docs:serve": "compodoc -p src/tsconfig.app.json -d docs -s",
+    "release:changelog": "npm run conventional-changelog -- -p angular -i CHANGELOG.md -s",
+    "compodoc": "npx compodoc -p src/tsconfig.app.json -s -w"
+  },
+  "dependencies": {
+    "@prisma/client": "3.7.0",
+    "atob": "^2.1.2",
+    "bcrypt": "^5.0.1",
+    "btoa": "^1.2.1",
+    "cookie": "^0.4.1",
+    "cors": "^2.8.5",
+    "dotenv": "^8.2.0",
+    "firebase": "^8.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "lodash.assign": "^4.2.0",
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.debounce": "^4.0.6",
+    "lodash.intersection": "^4.4.0",
+    "lodash.isempty": "^4.4.0",
+    "lodash.isequal": "^4.5.0",
+    "lodash.keys": "^4.2.0",
+    "lodash.pick": "^4.4.0",
+    "prisma": "3.7.0",
+    "next": "^12.0.7",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.1",
+    "@types/lodash.assign": "^4.2.0",
+    "@types/lodash.clonedeep": "^4.5.6",
+    "@types/lodash.debounce": "^4.0.6",
+    "@types/lodash.intersection": "^4.4.0",
+    "@types/lodash.isempty": "^4.4.0",
+    "@types/lodash.isequal": "^4.5.0",
+    "@types/lodash.keys": "^4.2.0",
+    "@types/lodash.pick": "^4.4.0",
+    "@types/node": "14.14.35",
+    "@types/react": "^17.0.2",
+    "@types/react-dom": "^17.0.2",
+    "cross-env": "7.0.3",
+    "eslint": "~8.5.0",
+    "globalthis": "^1.0.2",
+    "husky": "0.13.3",
+    "npm-run-all": "4.0.2",
+    "patch-package": "^6.4.7",
+    "ts-node": "9.1.1",
+    "tslib": "2.1.0",
+    "tslint-language-service": "^0.9.9",
+    "typescript": "^4.2.3",
+    "uuid": "^7.0.3",
+    "wait-on": "5.0.1",
+    "yargs": "^16.2.0",
+    "zone.js": "~0.11.4"
+  },
+  "engines": {
+    "node": ">=10.13.0"
+  }
+}
