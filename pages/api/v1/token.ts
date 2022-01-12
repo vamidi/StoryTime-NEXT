@@ -12,21 +12,22 @@ const prismaClient = DBClient.getInstance();
 export default authenticatedMiddleware(async (
 	req: NextApiRequest,
 	res: NextApiResponse,
-	payload: Claims,
+	payload?: Claims,
 ) => {
-	console.log('here', payload);
-	if(req.method !== 'POST') return res.status(401).json({ errorMessage: 'Not authorized!'});
+	if(req.method !== 'POST' || typeof payload === 'undefined') return res.status(401).json({ errorMessage: 'Not authorized!'});
 
 	// we need the refresh token
 	const { refresh_token } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
 	if (!refresh_token) res.status(401).json({ message: 'No refresh token provided'});
 
-	const user: User = await prismaClient.prisma.user.findFirst({
+	const user: User | null = await prismaClient.prisma.user.findFirst({
 		where: {
 			id: payload.uid,
 		},
 	});
+
+	if (user === null) return res.status(401).json({ message: 'User not found!'});
 
 	let { token, isMatch, isValid } = await checkToken(user, refresh_token);
 
@@ -34,15 +35,17 @@ export default authenticatedMiddleware(async (
 	// if we have a match and the token is not valid anymore. generate a new one.
 	if(isMatch)
 	{
-		const userMetadata = await prismaClient.prisma.userMetaData.findFirst({
+		const userMetadata: UserMetaData | null = await prismaClient.prisma.userMetaData.findFirst({
 			where: {
 				userId: payload.uid,
 			},
 		});
 
+		if (userMetadata === null) return res.status(401).json({ message: 'User data found!'});
+
 		// make JWT token
 		const claims = await makeClaims(userMetadata);
-		const newToken = sign(claims, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRY });
+		const newToken = sign(claims, process.env.JWT_SECRET as string, { expiresIn: process.env.JWT_EXPIRY });
 		const response = {
 			access_token: newToken,
 			expires_in: process.env.JWT_EXPIRY,
@@ -59,7 +62,7 @@ export default authenticatedMiddleware(async (
 		else
 		{
 			// update the token in the database
-			await updateToken(token, newRefreshTokenExpiry);
+			await updateToken(token as any, newRefreshTokenExpiry);
 		}
 
 

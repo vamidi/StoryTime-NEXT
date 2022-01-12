@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { verify } from 'jsonwebtoken';
 import cors from './cors';
+import { auth } from '../config/serverApp';
 /**
  * Enumeration of supported providers.
  *
@@ -48,19 +49,52 @@ export interface Claims {
 
 // export declare type authenticated<T = any> = (req: NextApiRequest, res: NextApiResponse<T>, payload: Claims) => void | Promise<void>;
 
-export const authenticatedMiddleware = (fn) => async (
+export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiResponse, payload?: Claims) => void) => async (
 	req: NextApiRequest,
 	res: NextApiResponse,
 ) => {
 	// Run cors
 	await cors(req, res);
 
-	verify(req.headers.authorization!, process.env.JWT_SECRET,async function (err, decoded)
+	if(process.env.DATABASE_PROVIDER === 'firebase')
 	{
-		if (!err && decoded) {
-			await fn(req, res, decoded as Claims);
+		const authHeader = req.headers.authorization as string;
+		if (!authHeader) {
+			res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
 		}
 
-		res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
-	});
+		const token = authHeader.split(' ')[1];
+		let decodedToken;
+		try {
+			decodedToken = await auth.verifyIdToken(token);
+			if (!decodedToken || !decodedToken.uid)
+				return res.status(401).end('Not authenticated');
+
+			req.body.uid = decodedToken.uid;
+		} catch (error: any) {
+			console.log(error.errorInfo);
+			const errorCode = error.errorInfo.code;
+			error.status = 401;
+			if (errorCode === 'auth/internal-error') {
+				error.status = 500;
+			}
+
+			return res.status(error.status).json({ error: errorCode });
+		}
+
+		await fn(req, res);
+	}
+	else
+	{
+		verify(req.headers.authorization!, process.env.JWT_SECRET as string,async function (err, decoded)
+		{
+			if (!err && decoded) {
+				await fn(req, res, decoded as Claims);
+			}
+
+			res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
+		});
+	}
+
+	return res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
 }

@@ -8,18 +8,19 @@ import { v4 as uuidV4 } from 'uuid';
 import cookie, { CookieSerializeOptions } from 'cookie';
 
 import { DBClient } from './prisma-client';
+import { Claims } from './auth-check';
 
 const prismaClient = DBClient.getInstance();
 
 const REFRESH_TOKEN_COOKIE_OPTIONS: CookieSerializeOptions = {
 	// Get part after // and before : (in case port number in URL)
 	// E.g. <http://localhost:3000> becomes localhost
-	domain: process.env.BASE_URL.split('//')[1].split(':')[0],
+	domain: (process.env.BASE_URL as string).split('//')[1].split(':')[0],
 	httpOnly: true,
 	path: '/',
 	sameSite: 'strict',
 	// Allow non-secure cookies only in development environment without HTTPS
-	secure: !!process.env.BASE_URL.includes('https'),
+	secure: !!process.env.BASE_URL?.includes('https'),
 };
 
 export const setCookie = async (res: NextApiResponse, jwt: string) => {
@@ -44,7 +45,7 @@ export const findTokens = async (userId: string, refreshToken: string) =>
 
 	const filteredTokens = tokens.filter(
 		(storedToken) => {
-			const isMatch = compareSync(refreshToken, storedToken.hash);
+			const isMatch = compareSync(refreshToken, storedToken.hash as string);
 			const isValid = storedToken.expiration.getTime() > Date.now();
 			if (isMatch && isValid) {
 				isRefreshTokenValid = true;
@@ -62,7 +63,7 @@ export const findTokens = async (userId: string, refreshToken: string) =>
 export const createCookie = async () => {
 	const newRefreshToken = uuidV4();
 	const newRefreshTokenExpiry = new Date(
-		Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY) * 1000,
+		Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY as string) * 1000,
 	);
 	const salt = await genSalt(10);
 	const newRefreshTokenHash = await hash(newRefreshToken, salt);
@@ -132,7 +133,7 @@ export const checkToken = async (user: User, refreshToken: string) =>
 
 	const filteredTokens: Token[] = tokens.filter(
 		(storedToken) => {
-			isMatch = compareSync(refreshToken, storedToken.hash);
+			isMatch = compareSync(refreshToken, storedToken.hash as string);
 			isValid = storedToken.expiration.getTime() > Date.now();
 			if (isMatch && isValid) {
 				isRefreshTokenValid = true;
@@ -148,10 +149,17 @@ export const checkToken = async (user: User, refreshToken: string) =>
  * Check if cookie exists
  * @param user
  */
-export const checkCookie = (user: User) => async (
+
+
+export const authenticatedMiddleware = (fn: () => void) => async (
 	req: NextApiRequest,
 	res: NextApiResponse,
-	next,
+) => {
+
+
+export const checkCookie = (user: User, next: () => void) => async (
+	req: NextApiRequest,
+	res: NextApiResponse,
 ) =>
 {
 	const setCookies = [];
@@ -178,6 +186,4 @@ export const checkCookie = (user: User) => async (
 
 	await insertToken(user.id, newRefreshTokenHash, newRefreshTokenExpiry);
 	return next();
-};
-
-
+}
