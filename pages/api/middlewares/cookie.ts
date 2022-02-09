@@ -8,14 +8,13 @@ import { v4 as uuidV4 } from 'uuid';
 import cookie, { CookieSerializeOptions } from 'cookie';
 
 import { DBClient } from './prisma-client';
-import { Claims } from './auth-check';
 
 const prismaClient = DBClient.getInstance();
 
 const REFRESH_TOKEN_COOKIE_OPTIONS: CookieSerializeOptions = {
 	// Get part after // and before : (in case port number in URL)
 	// E.g. <http://localhost:3000> becomes localhost
-	domain: (process.env.BASE_URL as string).split('//')[1].split(':')[0],
+	domain: (process.env.APP_URL as string).split('//')[1].split(':')[0],
 	httpOnly: true,
 	path: '/',
 	sameSite: 'strict',
@@ -149,14 +148,6 @@ export const checkToken = async (user: User, refreshToken: string) =>
  * Check if cookie exists
  * @param user
  */
-
-
-export const authenticatedMiddleware = (fn: () => void) => async (
-	req: NextApiRequest,
-	res: NextApiResponse,
-) => {
-
-
 export const checkCookie = (user: User, next: () => void) => async (
 	req: NextApiRequest,
 	res: NextApiResponse,

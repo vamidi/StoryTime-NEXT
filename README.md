@@ -1,5 +1,5 @@
-# StoryTime-PRISMA
-Primsa API for the StoryTime application.
+# StoryTime Next
+Next server for the StoryTime application.
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/vamidicreations)
 
@@ -19,9 +19,14 @@ For help, support, discussion, and chill times, come and join the StoryTime comm
 ## NPM Install
 
 ```sh
-npm install prisma --save-dev 
+# install the modules.
+npm install
+
+# run the server.
+npm start;
 ```
 
 ## External links
+- [Next quickstart](https://nextjs.org/docs/getting-started)
 - [Primsa quickstart](https://www.prisma.io/docs/getting-started/quickstart)
 
