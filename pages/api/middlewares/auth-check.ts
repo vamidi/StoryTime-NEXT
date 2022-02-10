@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { verify } from 'jsonwebtoken';
 import cors from './cors';
 import { auth } from '../config/serverApp';
+import { isFirebase } from '../config/utils';
 /**
  * Enumeration of supported providers.
  *
@@ -56,11 +57,11 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 	// Run cors
 	await cors(req, res);
 
-	if(process.env.DATABASE_PROVIDER === 'firebase')
+	if(isFirebase)
 	{
 		const authHeader = req.headers.authorization as string;
 		if (!authHeader) {
-			res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
+			return res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
 		}
 
 		const token = authHeader.split(' ')[1];
@@ -82,7 +83,7 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 			return res.status(error.status).json({ error: errorCode });
 		}
 
-		await fn(req, res);
+		return fn(req, res);
 	}
 	else
 	{
@@ -92,7 +93,7 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 				await fn(req, res, decoded as Claims);
 			}
 
-			res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
+			return res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
 		});
 	}
 
