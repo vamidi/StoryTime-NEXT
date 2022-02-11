@@ -1,6 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-<<<<<<< HEAD
 # IDEs and editors
 /.idea
 /.vscode
@@ -12,8 +11,6 @@
 .settings/
 *.sublime-workspace
 
-=======
->>>>>>> e07c911 (Initial commit from Create Next App)
 # dependencies
 /node_modules
 /.pnp
@@ -28,28 +25,21 @@
 
 # production
 /build
-<<<<<<< HEAD
 /dist
-=======
->>>>>>> e07c911 (Initial commit from Create Next App)
 
 # misc
 .DS_Store
 *.pem
 
-<<<<<<< HEAD
 package-lock.json
 yarn.lock
 
-=======
->>>>>>> e07c911 (Initial commit from Create Next App)
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 # local env files
-<<<<<<< HEAD
 .env
 
 # vercel
@@ -69,12 +59,3 @@ typescript/**/migrations/
 misc/**/migrations/
 databases/**/migrations/
 experimental/**/*.db
-=======
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# vercel
-.vercel
->>>>>>> e07c911 (Initial commit from Create Next App)
