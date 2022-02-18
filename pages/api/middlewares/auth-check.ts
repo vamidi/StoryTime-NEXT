@@ -71,9 +71,9 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 			if (!decodedToken || !decodedToken.uid)
 				return res.status(401).end('Not authenticated');
 
-			req.body.uid = decodedToken.uid;
+			req.body = JSON.stringify({ ...req.body, uid: decodedToken.uid });
 		} catch (error: any) {
-			console.log(error.errorInfo);
+			console.log(error);
 			const errorCode = error.errorInfo.code;
 			error.status = 401;
 			if (errorCode === 'auth/internal-error') {

@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import firebase from 'firebase/app';
 import "firebase/auth";
+import "firebase/storage";
 
 if (!admin.apps.length) {
 	admin.initializeApp({
@@ -10,6 +11,7 @@ if (!admin.apps.length) {
 			privateKey: (process.env.FIREBASE_PRIVATE_KEY as string).replace(/\\n/g, '\n'),
 		}),
 		databaseURL: process.env.FIREBASE_DATABASE_URL,
+		storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
 	});
 }
 
@@ -27,5 +29,7 @@ if(!firebase.apps.length) {
 
 const database = admin.database();
 const auth = admin.auth();
+const bucket = admin.storage().bucket();
 
-export { firebase, database, auth }
+// TODO see if we need all the settings in the non-admin firebase
+export { firebase, database, auth, bucket }

@@ -11,13 +11,12 @@ export default async (req: Request, res: Response) =>
 	// @ts-ignore
 	await cors(req, res);
 
-	if (req.method !== 'POST' && typeof req.body === 'undefined')
+	if (req.method !== 'POST' || typeof req.body === 'undefined')
 		return res.status(401).json({ errorMessage: 'Not authorized!' });
 
 	// password: hash,
 	const hasBody = typeof req.body === 'string' && req.body !== '';
 	const response: { email: string, password: string } = hasBody ? JSON.parse(req.body) : req.body;
-
 	if(response)
 	{
 		if(!response.password)
