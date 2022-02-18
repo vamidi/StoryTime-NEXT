@@ -1,7 +1,7 @@
 # StoryTime Next
-Next server for the StoryTime application.
 
 ## Introduction
+Next server for the StoryTime application.
 
 This sever enables the connection between Unity3D &amp; Unreal engine 4.
 
@@ -89,7 +89,7 @@ The following table describes the configurable environment variables.
 
 ```shell
 # run the server.
-npm run start;
+npm run start
 ```
 
 ## Learn More
