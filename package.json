@@ -22,11 +22,10 @@
 	"private": true,
 	"scripts": {
 		"conventional-changelog": "conventional-changelog",
-		"postinstall:web": "node postinstall-web",
 		"dev": "next dev",
 		"start": "next dev",
 		"start:prod": "next start",
-		"build": "npm run postinstall:web -- --environment=prod && next build",
+		"build": "next build",
 		"export": "next export",
 		"lint": "next lint",
 		"stop": "npm stop",
