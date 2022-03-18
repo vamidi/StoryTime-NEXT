@@ -35,7 +35,7 @@
 		"compodoc": "npx compodoc -p src/tsconfig.app.json -s -w"
 	},
 	"dependencies": {
-		"@prisma/client": "^3.9.2",
+		"@prisma/client": "^3.11.0",
 		"atob": "^2.1.2",
 		"bcrypt": "^5.0.1",
 		"btoa": "^1.2.1",

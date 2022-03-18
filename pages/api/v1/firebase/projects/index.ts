@@ -52,7 +52,8 @@ export default authenticatedMiddleware(async (
 
 		result.projects = await prismaClient.prisma.project.findMany({
 			where: {
-				id: '1',
+				owner: uid,
+				memberId: uid,
 			},
 		});
 	}

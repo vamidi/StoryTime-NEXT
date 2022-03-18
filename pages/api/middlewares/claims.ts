@@ -16,7 +16,7 @@ export const makeClaims = async (userMetadata: UserMetaData) =>
 		prisma: {
 			identities: {
 				email: [
-					"valencio_masaki16@live.nl"
+					userMetadata.email
 				]
 			},
 			sign_in_provider: "password"

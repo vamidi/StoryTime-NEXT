@@ -12,22 +12,25 @@ generator client {
 
 model User {
 	@@map(name: "users")
-	id              String @id @default(cuid())
+	uid              String @id @default(cuid())
 
 	tokens          Token[]
 
 	metadata        UserMetaData?
 	projects        Project[] @relation(name: "members") // A user can have multiple projects.
-	ownedProjects   Project[] @relation(name: "owners")
+	ownedProjects   Project[] @relation(name: "owner")
+
+	roles           String? @default("{}")
 }
 
 model UserMetaData {
-	id          Int @id @default(autoincrement())       // id
-	user        User @relation(fields: [userId], references: [id])
+	@@map(name: "user_metadata")
+	uid         Int @id @default(autoincrement())       // id
+	user        User @relation(fields: [userId], references: [uid])
 	userId      String
 	created_at  DateTime @default(now())
 	updated_at  DateTime @updatedAt
-	displayName String
+	displayName String?
 	email       String @unique
 	password    String
 	firstName   String
@@ -36,7 +39,8 @@ model UserMetaData {
 }
 
 model Token {
-	id            Int       @id @default(autoincrement())
+	@@map(name: "tokens")
+	uid           Int       @id @default(autoincrement())
 	created_at    DateTime  @default(now())
 	updated_at    DateTime  @updatedAt
 	type          String    // TODO use TokenType when using mysql or postgresql
@@ -45,7 +49,7 @@ model Token {
 	expiration    DateTime
 
 	// Relation fields
-	user          User @relation(fields: [userId], references: [id])
+	user          User @relation(fields: [userId], references: [uid])
 	userId        String
 }
 
@@ -56,20 +60,22 @@ model Token {
 
 model Project {
 	@@map(name: "projects")
-	id          String @id @default(cuid())  // Unique ID of the project
+	uid         String @id @default(cuid())  // Unique ID of the project
 	metadata    ProjectMetaData? // Meta data of the project
    	tables      Table[]
 
 	memberId    String?
-	members     User[] @relation(name: "members", fields: [memberId], references: [id]) // A project can belong to many members.
+	members     User[] @relation(name: "members", fields: [memberId], references: [uid]) // A project can belong to many members.
 
-	owner       User @relation(name: "owners", fields: [ownerId], references: [id])
+	// Relation fields
+	owner       User @relation(name: "owner", fields: [ownerId], references: [uid], onUpdate: SetNull, onDelete: SetNull)
     ownerId     String // Project belongs to a user
 }
 
 model ProjectMetaData {
-	id          Int @id @default(autoincrement())       // id
-    project     Project @relation(fields: [projectId], references: [id])
+	@@map(name: "project_metadata")
+	uid         Int @id @default(autoincrement())       // id
+    project     Project @relation(fields: [projectId], references: [uid])
     projectId   String // Relation to the project.
 	created_at  DateTime @default(now())
 	updated_at  DateTime @updatedAt
@@ -86,8 +92,8 @@ model ProjectMetaData {
 
 model Table {
 	@@map(name: "tables")
-    id          String @id @default(cuid())
-    project     Project @relation(fields: [projectId], references: [id])
+    uid         String @id @default(cuid())
+    project     Project @relation(fields: [projectId], references: [uid])
     projectId   String // Relation to the project.
     data        TableData[]
     relations   Relation[]
@@ -96,17 +102,17 @@ model Table {
 }
 
 model TableData {
-	// @@map(name: "tables")
-	id          Int @id @default(autoincrement())       // id
-	Table       Table @relation(fields: [tableId], references: [id])
+	@@map(name: "table")
+	uid          Int @id @default(autoincrement())       // id
+	Table       Table @relation(fields: [tableId], references: [uid])
 	tableId     String
 	deleted     Boolean                                 //
 	data        String                                  // key value data
 }
 
 model TableMetaData {
-	id          Int @id @default(autoincrement())       // id
-	Table       Table @relation(fields: [tableId], references: [id])
+	uid         Int @id @default(autoincrement())       // id
+	Table       Table @relation(fields: [tableId], references: [uid])
 	tableId     String
 	title       String
 	description String
@@ -124,9 +130,9 @@ model TableMetaData {
 // Revisions is versioning for each row in the table.
 model Revision {
 	@@map(name: "revisions")
-	id              String @id @default(cuid())
-	Table           Table @relation(fields: [tableId], references: [id])
-	tableId         String // - tableId - where this revision belongs to.
+	uid             String @id @default(cuid())
+	Table           Table @relation(fields: [tableId], references: [uid], onUpdate: SetDefault, onDelete: SetDefault)
+	tableId         String 							// - tableId - where this revision belongs to.
     currentRevID    Int					            // - CurrentRevID - Current revision of the element
     revision        Int 						    // - Revisions - Rev number of the element
     created_at      DateTime @default(now())		// - created_at - Data changed with the new value
@@ -134,14 +140,14 @@ model Revision {
     rowID           Int      						// - Id - Id of the element in that table
     oldValue        String							// - oldValue - old value it got now
     newValue        String	 						// - newValue - new value it had.
-    uid             String		 				    // - uid - user id that changed it.
+    userId          String		 				    // - uid - user id that changed it.
     deleted         Boolean
 }
 
 model Relation {
 	@@map(name: "relations")
-	id      String @id @default(cuid())
-	Table   Table @relation(fields: [tableId], references: [id])
+	uid     String @id @default(cuid())
+	Table   Table @relation(fields: [tableId], references: [uid])
 	tableId String // - tableId - where this revision belongs to.
 	columns String                          // Relational data
 }
