@@ -1,5 +1,5 @@
-import { Users, UserMetaData, Prisma, Projects } from '@prisma/client';
-import { DBClient } from '@core/middlewares/prisma-client';
+import { User as Users, UserMetaData, Prisma, Project as Projects } from '@prisma/client';
+import { DBClient } from '@core-middlewares/prisma-client';
 
 const prismaClient = DBClient.getInstance();
 
