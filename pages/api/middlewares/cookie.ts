@@ -2,12 +2,16 @@
  * Options used in resolvers to issue the refresh token cookie.
  */
 import { NextApiRequest, NextApiResponse } from 'next';
-import { Token, User } from '@prisma/client';
+import { Token, User, UserMetaData } from '@prisma/client';
 import { compareSync, genSalt, hash } from 'bcrypt';
 import { v4 as uuidV4 } from 'uuid';
 import cookie, { CookieSerializeOptions } from 'cookie';
 
 import { DBClient } from './prisma-client';
+import { sign } from 'jsonwebtoken';
+import { IClaims, makeClaims } from '@core-middlewares/claims';
+import auth from '@core-config/auth';
+import { isFirebase } from '@core-config/utils';
 
 const prismaClient = DBClient.getInstance();
 
@@ -59,15 +63,15 @@ export const findTokens = async (userId: string, refreshToken: string) =>
 /**
  * Create cookie
  */
-export const createCookie = async () => {
-	const newRefreshToken = uuidV4();
-	const newRefreshTokenExpiry = new Date(
-		Date.now() + parseInt(process.env.REFRESH_TOKEN_EXPIRY as string) * 1000,
-	);
-	const salt = await genSalt(10);
-	const newRefreshTokenHash = await hash(newRefreshToken, salt);
+export const createCookie = async (claims: IClaims) => {
+	const newRefreshToken = sign(claims, process.env.JWT_REFRESH_TOKEN_SECRET as string,{ expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY });
+	// const salt = await genSalt(10);
+	// const newRefreshTokenHash = await hash(newRefreshToken, salt);
+	const newRefreshTokenExpiry = new Date(Date.now());
+	// TODO take this from env file.
+	newRefreshTokenExpiry.setDate(newRefreshTokenExpiry.getTime() + 7);
 
-	return { newRefreshToken, newRefreshTokenExpiry, newRefreshTokenHash };
+	return { newRefreshToken, newRefreshTokenExpiry /*, newRefreshTokenHash */ };
 }
 
 export const insertToken = async (userId: string, newRefreshTokenHash: string, newRefreshTokenExpiry: Date) =>
@@ -88,7 +92,7 @@ export const insertToken = async (userId: string, newRefreshTokenHash: string, n
 
 	await prismaClient.prisma.user.update({
 		where: {
-			id: userId,
+			uid: userId,
 		},
 		data: {
 			tokens: {
@@ -126,7 +130,7 @@ export const checkToken = async (user: User, refreshToken: string) =>
 
 	const tokens: Token[] = await prismaClient.prisma.token.findMany({
 		where: {
-			userId: user.id,
+			userId: user.uid,
 		},
 	});
 
@@ -160,21 +164,32 @@ export const checkCookie = (user: User, next: () => void) => async (
 
 	if (user === null) res.status(401).json({ message: 'Invalid user' });
 
-	let isRefreshTokenValid = await findTokens(user.id, refreshToken);
+	let isRefreshTokenValid = await findTokens(user.uid, refreshToken);
 
 	if (!isRefreshTokenValid) throw new Error('Invalid refresh token');
 
-	const { newRefreshToken, newRefreshTokenExpiry, newRefreshTokenHash } = await createCookie();
-
-	setCookies.push({
-		name: 'refreshToken',
-		value: newRefreshToken,
-		options: {
-			...REFRESH_TOKEN_COOKIE_OPTIONS,
-			expires: newRefreshTokenExpiry,
+	const userMetadata = await prismaClient.prisma.userMetaData.findFirst({
+		where: {
+			userId: user.uid,
 		},
 	});
 
-	await insertToken(user.id, newRefreshTokenHash, newRefreshTokenExpiry);
+	if (userMetadata === null || typeof userMetadata === 'undefined' ) res.status(401).json({ message: 'Invalid user' });
+
+	let payload = null;
+	if(!isFirebase && typeof auth.generateToken !== 'undefined')
+	{
+		payload = await auth.generateToken(userMetadata);
+	}
+
+
+	setCookies.push({
+		name: 'refreshToken',
+		value: payload.refreshToken,
+		options: {
+			...REFRESH_TOKEN_COOKIE_OPTIONS,
+			expires: payload.exp,
+		},
+	});
 	return next();
 }

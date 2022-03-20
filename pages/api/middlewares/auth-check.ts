@@ -3,6 +3,7 @@ import { verify } from 'jsonwebtoken';
 import cors from './cors';
 import { auth } from '../config/serverApp';
 import { isFirebase } from '../config/utils';
+import { compareSync } from 'bcrypt';
 /**
  * Enumeration of supported providers.
  *
@@ -87,7 +88,10 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 	}
 	else
 	{
-		verify(req.headers.authorization!, process.env.JWT_SECRET as string,async function (err, decoded)
+		const hasBody = typeof req.body === 'string' && req.body !== '';
+		const { uid, refresh_token } = hasBody ? JSON.parse(req.body) : req.body;
+
+		return verify(req.headers.authorization!, process.env.JWT_SECRET as string,async function (err, decoded)
 		{
 			if (!err && decoded) {
 				await fn(req, res, decoded as Claims);
@@ -96,6 +100,4 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 			return res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
 		});
 	}
-
-	return res.status(401).json({ errorMessage: 'Sorry you are not authenticated' });
 }

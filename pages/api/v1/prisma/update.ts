@@ -4,10 +4,10 @@ import set from 'lodash.set';
 
 // @ts-ignore
 import { dmmf, Users, Projects } from '@prisma/client';
-import cors from '../../../../middlewares/cors';
-import { DBClient } from '../../../../middlewares/prisma-client';
-import { convertTable, parseTable } from '../../../../data/convertables';
-import { deepFind } from '../../../../data/helper.functions';
+import cors from '@core-middlewares/cors';
+import { DBClient } from '@core-middlewares/prisma-client';
+import { convertTable, parseTable } from '@core-data/helpers/convertables';
+import { deepFind } from '@core-data/helpers';
 
 const prismaClient = DBClient.getInstance();
 

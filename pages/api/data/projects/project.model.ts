@@ -37,6 +37,16 @@ export interface IProjectData
 	// To see whether the project is deleted
 	deleted: boolean;
 
+	relatedTables: {
+		characters: string,
+		items: string,
+		equipments: string,
+		classes: string,
+		enemies: string,
+		skills: string,
+		[key: string]: string,
+	}
+
 	// To see which languages are in the project
 	languages: { [key in KeyLanguage]?: boolean },
 
@@ -84,7 +94,7 @@ export class Project implements ProjectModel
 		const keys = Object.keys(incomingData);
 		for(const key of keys)
 		{
-			const tblField: any = fields.find((field) => field.name === key);
+			const tblField: any = fields.find((field: { name: string }) => field.name === key);
 			if(tblField)
 			{
 				// check if this is a relation field
@@ -92,7 +102,7 @@ export class Project implements ProjectModel
 				{
 					if(type === 'insert')
 					{
-						await Project.convertCreateInput(tblField, inputData as Prisma.ProjectsCreateInput, incomingData);
+						await Project.convertCreateInput(tblField, inputData as Prisma.ProjectCreateInput, incomingData);
 					}
 					else
 					{
@@ -106,7 +116,7 @@ export class Project implements ProjectModel
 		return inputData;
 	}
 
-	private static async convertCreateInput(tblField: any, inputData: Prisma.ProjectsCreateInput, incomingFieldData: any)
+	private static async convertCreateInput(tblField: any, inputData: Prisma.ProjectCreateInput, incomingFieldData: any)
 	{
 		switch(tblField.name)
 		{
@@ -115,14 +125,14 @@ export class Project implements ProjectModel
 				if (incomingFieldData.hasOwnProperty('members')) {
 					// TODO add more
 					const members = Object.entries(incomingFieldData.members);
-					const uids: { uid: string }[] = [];
+					const uids: { user: { connect: { uid: string } }, assignedBy: string } [] = [];
 					for (const [key, value] of members) {
 						if (value) {
-							uids.push({ uid: key });
+							uids.push({ user: { connect: { uid: key } }, assignedBy: key  });
 						}
 					}
 					inputData.members = {
-						connect: uids,
+						create: uids,
 					};
 				}
 			}
@@ -144,6 +154,7 @@ export class Project implements ProjectModel
 					inputData.metadata = {
 						create: {
 							...metadata,
+							relatedTables: JSON.stringify(metadata.relatedTables),
 							languages: JSON.stringify(metadata.languages),
 							version: JSON.stringify(metadata.version),
 						},
@@ -154,7 +165,7 @@ export class Project implements ProjectModel
 		}
 	}
 
-	private static async convertUpdateInput(tblField: any, updateData: Prisma.ProjectsUpdateInput, incomingFieldData: any)
+	private static async convertUpdateInput(tblField: any, updateData: Prisma.ProjectUpdateInput, incomingFieldData: any)
 	{
 
 	}

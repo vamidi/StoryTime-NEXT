@@ -1,4 +1,4 @@
-import { Prisma, Revisions } from '@prisma/client';
+import { Prisma, Revision } from '@prisma/client';
 import { DBClient } from '@core-middlewares/prisma-client';
 import { User } from '@core-data/users/user.model';
 import { QueryParams } from '@core-data/helpers';
@@ -6,6 +6,18 @@ import { IProjectData, ITable, Project, ProjectModel } from '@core-data/projects
 import { IRelation, ITableData, Table, TableModel } from '@core-data/tables/table.model';
 
 const prismaClient = DBClient.getInstance();
+
+export function getTableName(tbl: string): string
+{
+	switch(tbl)
+	{
+		case 'users': return 'user';
+		case 'projects': return 'project';
+		case 'tables': return 'table';
+		case 'revisions': return 'revision';
+		default: return '';
+	}
+}
 
 export function isRelation(tbl: string)
 {
@@ -38,14 +50,14 @@ export async function convertTable(tbl: string, fields: any, incomingData: any, 
 	switch(tbl)
 	{
 		case 'projects':
-			return Project.createOrUpdate(tbl, fields, incomingData, uid ? 'update' : 'insert');
+			return Project.createOrUpdate(getTableName(tbl), fields, incomingData, uid ? 'update' : 'insert');
 		case 'tables':
 		{
-			return Table.createOrUpdate(tbl, fields, incomingData, uid ? 'update' : 'insert');
+			return Table.createOrUpdate(getTableName(tbl), fields, incomingData, uid ? 'update' : 'insert');
 		}
 		case 'users':
 		{
-			return User.createOrUpdate(tbl, fields, incomingData, uid ? 'update' : 'insert');
+			return User.createOrUpdate(getTableName(tbl), fields, incomingData, uid ? 'update' : 'insert');
 		}
 	}
 }
@@ -64,7 +76,7 @@ export async function queryTable(tbl: string, fields: any, incomingData: any, qu
 	if(query)
 	{
 		// TODO fix index path
-		const q: Prisma.RevisionsFindManyArgs = {
+		const q: Prisma.RevisionFindManyArgs = {
 			orderBy: {},
 			where: {}
 		}
@@ -80,7 +92,7 @@ export async function queryTable(tbl: string, fields: any, incomingData: any, qu
 		switch(tbl)
 		{
 			case 'revisions':
-				const revisions: Revisions[] = await result;
+				const revisions: Revision[] = await result;
 				if(revisions.length)
 				{
 					revisions.forEach((revision) =>
@@ -114,11 +126,11 @@ export async function parseTable(tbl: string, uid: string,  fields: any[])
 	{
 		case 'users':
 		{
-			return User.parse(tbl, uid);
+			return User.parse(getTableName(tbl), uid);
 		}
 		case 'projects':
 		{
-			const search = await prismaClient.prisma[tbl].findUnique({
+			const search = await prismaClient.prisma.project.findUnique({
 				where: {
 					uid: uid,
 				},
@@ -144,84 +156,81 @@ export async function parseTable(tbl: string, uid: string,  fields: any[])
 			});
 
 			const tables: ITable = {};
+			const project: ProjectModel | null = null;
 
-			if(search.tables.length)
-			{
-				search.tables.forEach((table) =>
-				{
+			if(search && search.tables.length) {
+				search.tables.forEach((table) => {
 					tables[table.uid] = {
 						enabled: true, // TODO see if we need this
 						name: table.metadata.title,
 						description: table.metadata.description,
 					}
 				});
-			}
 
-			const searchData = search.metadata;
-			// @ts-ignore
-			let metadata: IProjectData = {};
-			if(searchData)
-			{
-				metadata = {
-					// Title of the project
-					title: searchData.title,
+				const searchData = search.metadata;
+				// @ts-ignore
+				let metadata: IProjectData = {};
+				if (searchData) {
+					metadata = {
+						// Title of the project
+						title: searchData.title,
 
-					// Alias of the project
-					alias: searchData.alias,
+						// Alias of the project
+						alias: searchData.alias,
 
-					// Project description
-					description: searchData.description,
+						// Project description
+						description: searchData.description,
 
-					// Owner of the project
-					owner: search.ownerId,
+						// Owner of the project
+						owner: search.ownerId,
 
-					// When the project is created
-					created_at: searchData.created_at,
+						// When the project is created
+						created_at: searchData.created_at,
 
-					// When the project was updated
-					updated_at: searchData.updated_at,
+						// When the project was updated
+						updated_at: searchData.updated_at,
 
-					// To see if the project is private
-					private: searchData.private,
+						// To see if the project is private
+						private: searchData.private,
 
-					// To see whether the project is deleted
-					deleted: searchData.deleted,
+						// To see whether the project is deleted
+						deleted: searchData.deleted,
 
-					// To see which languages are in the project
-					languages: JSON.parse(searchData.languages),
+						// To see which languages are in the project
+						languages: JSON.parse(searchData.languages),
 
-					version: JSON.parse(searchData.version),
+						relatedTables: JSON.parse(searchData.relatedTables),
+
+						version: JSON.parse(searchData.version),
+					};
+				}
+
+				if (search.tables.length) {
+					search.tables.forEach((table) => {
+						tables[table.uid] = {
+							enabled: true, // TODO see if we need this
+							name: table.metadata.title,
+							description: table.metadata.title,
+						}
+					});
+				}
+
+				const members = {};
+				if (search.members.length) {
+					search.members.forEach((member) => members[member.uid] = true);
+				}
+
+				const project: ProjectModel = {
+					uid,
+					ownerId: search.ownerId,
+					memberId: search.memberId,
+					tables,
+					metadata,
+					members,
 				};
+				delete project['ownerId'];
+				delete project['memberId'];
 			}
-
-			if(search.tables.length)
-			{
-				search.tables.forEach((table) =>
-				{
-					tables[table.uid] = {
-						enabled: true, // TODO see if we need this
-						name: table.metadata.title,
-						description: table.metadata.title,
-					}
-				});
-			}
-
-			const members = {};
-			if(search.members.length)
-			{
-				search.members.forEach((member) => members[member.uid] = true);
-			}
-
-			const project: ProjectModel = {
-				uid,
-				ownerId: search.ownerId,
-				memberId: search.memberId,
-				tables,
-				metadata,
-				members,
-			};
-			delete project['ownerId'];
-			delete project['memberId'];
 			return project;
 		}
 		case 'tables':

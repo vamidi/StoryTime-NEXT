@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { Server } from 'socket.io'
+// import { Server } from 'socket.io';
 
 // @ts-ignore
 import { Users, dmmf } from '@prisma/client';
@@ -32,6 +32,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 	if(response.ref === null || typeof response.ref === 'undefined')
 		return res.status(200).json({ err: true, errorMessage: 'We have no reference, this must be filled in and not null' });
 
+	/*
 	const io: Server = (<any>req).context.io;
 	io.on("connection", socket => {
 		socket.emit("hello", 1, "2", { 3: '4', 5: Buffer.from([6]) });
@@ -65,7 +66,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 
 
 		io.emit("documents", Object.keys(documents));
-		*/
+
 		socket.on('disconnect', () => {
 			console.log(socket.id, 'disconnected');
 
@@ -76,6 +77,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 
 		console.log(`Socket ${socket.id} has connected`);
 	});
+	*/
 
 	// paradigm
 	// for example ref => tbl/uid/metadata

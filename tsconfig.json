@@ -28,9 +28,6 @@
 			],
 			"@core-data/*": [
 				"pages/api/data/*"
-			],
-			"@core-database/*": [
-				"pages/api/database/*"
 			]
 		}
 	},

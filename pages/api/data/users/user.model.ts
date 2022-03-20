@@ -1,4 +1,4 @@
-import { User as Users, UserMetaData, Prisma, Project as Projects } from '@prisma/client';
+import { User as Users, UserMetaData, Prisma, Project as Projects, ProjectsOnUsers } from '@prisma/client';
 import { DBClient } from '@core-middlewares/prisma-client';
 
 const prismaClient = DBClient.getInstance();
@@ -56,7 +56,7 @@ export class User implements UserModel
 	 */
 	public static async parse(tbl: string, uid: string)
 	{
-		const search: { uid: string, metadata?: UserMetaData, projects?: Projects[], roles?: string } = await prismaClient.prisma[tbl].findUnique({
+		const search: { uid: string, metadata?: UserMetaData, projects?: Projects[], roles?: string } = await prismaClient.prisma.user.findUnique({
 			where: {
 				uid,
 			},
@@ -82,7 +82,7 @@ export class User implements UserModel
 
 	public static async createOrUpdate(tbl: string, fields: any, incomingData: any, type: 'insert' | 'update')
 	{
-		const inputData: Prisma.UsersCreateInput | Prisma.UsersUpdateInput = { }
+		const inputData: Prisma.UserCreateInput | Prisma.UserUpdateInput = { }
 
 		const keys = Object.keys(incomingData);
 		for(const key of keys)
@@ -92,7 +92,7 @@ export class User implements UserModel
 			{
 				if(type === 'insert')
 				{
-					await User.convertCreateInput(tblField, inputData as Prisma.UsersCreateInput, incomingData);
+					await User.convertCreateInput(tblField, inputData as Prisma.UserCreateInput, incomingData);
 				}
 				else
 				{
@@ -109,7 +109,7 @@ export class User implements UserModel
 		return inputData;
 	}
 
-	private static async convertCreateInput(tblField: any, inputData: Prisma.UsersCreateInput, incomingFieldData: any)
+	private static async convertCreateInput(tblField: any, inputData: Prisma.UserCreateInput, incomingFieldData: any)
 	{
 		switch(tblField.name)
 		{
@@ -162,7 +162,7 @@ export class User implements UserModel
 				if (incomingFieldData.hasOwnProperty('projects'))
 				{
 					// we need to find the projects
-					const queryProjects: { projects: {uid, memberId, ownerId }[] } = await prismaClient.prisma.users.findUnique({
+					const queryProjects: { projects: ProjectsOnUsers[] } | null = await prismaClient.prisma.user.findUnique({
 						where: {
 							uid: incomingFieldData.uid,
 						},

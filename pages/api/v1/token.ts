@@ -5,25 +5,29 @@ import { sign } from 'jsonwebtoken';
 import { DBClient } from '../middlewares/prisma-client';
 import { checkToken, createCookie, insertToken, updateToken } from '../middlewares/cookie';
 import { makeClaims } from '../middlewares/claims';
-import { authenticatedMiddleware, Claims } from '../middlewares/auth-check';
+import cors from '@core-middlewares/cors';
+import { isFirebase } from '@core-config/utils';
+import auth from '@core-config/auth';
 
 const prismaClient = DBClient.getInstance();
 
-export default authenticatedMiddleware(async (
+export default async (
 	req: NextApiRequest,
 	res: NextApiResponse,
-	payload?: Claims,
 ) => {
-	if(req.method !== 'POST' || typeof payload === 'undefined') return res.status(401).json({ errorMessage: 'Not authorized!'});
+	await cors(req, res);
+
+	if(req.method !== 'POST') return res.status(401).json({ errorMessage: 'Not authorized!'});
 
 	// we need the refresh token
-	const { refresh_token } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+	const hasBody = typeof req.body === 'string' && req.body !== '';
+	const { uid, refresh_token } = hasBody ? JSON.parse(req.body) : req.body;
 
 	if (!refresh_token) res.status(401).json({ message: 'No refresh token provided'});
 
 	const user: User | null = await prismaClient.prisma.user.findFirst({
 		where: {
-			id: payload.uid,
+			uid,
 		},
 	});
 
@@ -37,40 +41,51 @@ export default authenticatedMiddleware(async (
 	{
 		const userMetadata: UserMetaData | null = await prismaClient.prisma.userMetaData.findFirst({
 			where: {
-				userId: payload.uid,
+				userId: uid,
 			},
 		});
 
-		if (userMetadata === null) return res.status(401).json({ message: 'User data found!'});
+		if (userMetadata === null || typeof auth.generateToken === 'undefined') return res.status(401).json({ message: 'User data found!'});
 
-		// make JWT token
-		const claims = await makeClaims(userMetadata);
-		const newToken = sign(claims, process.env.JWT_SECRET as string, { expiresIn: process.env.JWT_EXPIRY });
+		const { claims, exp, idToken, refreshToken } = await auth.generateToken(userMetadata, token, !isValid);
+		const payload = {
+			additionalUserInfo: {
+				isNewUser: false,
+				profile: {},
+				providerId: 'password',
+				username: null,
+			},
+			credential: null,
+			operationType: 'signIn',
+			user: {
+				...claims,
+				apiKey: 'AIzaSyC05Pn4eiFjs0fvahifUsciggpwyw0Xj9M',
+				appName: '[DEFAULT]',
+				authDomain: 'buas-prototype-dev.firebaseapp.com',
+				stsTokenManager: {
+					apiKey: 'AIzaSyC05Pn4eiFjs0fvahifUsciggpwyw0Xj9M',
+					refreshToken: '',
+					accessToken: '',
+					expirationTime: exp,
+				},
+			},
+		}
+
+		payload.user.stsTokenManager.accessToken = idToken;
+		payload.user.stsTokenManager.refreshToken = refreshToken;
+		/*
 		const response = {
 			access_token: newToken,
 			expires_in: process.env.JWT_EXPIRY,
 			refresh_token: null,
 		}
-		// Create new cookie with new tokens
-		const { newRefreshToken, newRefreshTokenExpiry, newRefreshTokenHash } = await createCookie();
-
-		if(!isValid)
-		{
-			// insert the token in the database
-			await insertToken(userMetadata.userId, newRefreshTokenHash, newRefreshTokenExpiry);
-		}
-		else
-		{
-			// update the token in the database
-			await updateToken(token as any, newRefreshTokenExpiry);
-		}
-
+		 */
 
 		// return the payload.
-		response.refresh_token = !isValid ? newRefreshToken : refresh_token;
+		// response.refresh_token = !isValid ? newRefreshToken : refresh_token;
 
-		return res.status(200).json(response);
+		return res.status(200).json(payload);
 	}
 
 	return res.status(401).json({ errorMessage: 'Token cant be found!'});
-})
+};

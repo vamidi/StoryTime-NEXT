@@ -12,7 +12,7 @@ export default async (req: Request, res: Response) =>
 	await cors(req, res);
 
 	if (req.method !== 'POST' || typeof req.body === 'undefined')
-		return res.status(401).json({ errorMessage: 'Not authorized!' });
+		return res.status(200).json({ errorMessage: 'Not authorized!' });
 
 	// password: hash,
 	const hasBody = typeof req.body === 'string' && req.body !== '';
@@ -30,7 +30,34 @@ export default async (req: Request, res: Response) =>
 				},
 			});
 
-			return res.status(200).json(auth.generateToken(userMetadata));
+			const { claims, exp, idToken, refreshToken } = await auth.generateToken(userMetadata);
+			const payload = {
+				additionalUserInfo: {
+					isNewUser: false,
+					profile: {},
+					providerId: 'password',
+					username: null,
+				},
+				credential: null,
+				operationType: 'signIn',
+				user: {
+					...claims,
+					apiKey: 'AIzaSyC05Pn4eiFjs0fvahifUsciggpwyw0Xj9M',
+					appName: '[DEFAULT]',
+					authDomain: 'buas-prototype-dev.firebaseapp.com',
+					stsTokenManager: {
+						apiKey: 'AIzaSyC05Pn4eiFjs0fvahifUsciggpwyw0Xj9M',
+						refreshToken: '',
+						accessToken: '',
+						expirationTime: exp,
+					},
+				},
+			}
+
+			payload.user.stsTokenManager.accessToken = idToken;
+			payload.user.stsTokenManager.refreshToken = refreshToken;
+
+			return res.status(200).json(payload);
 		}
 
 		return res.status(200).json(result);

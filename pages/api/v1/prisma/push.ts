@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 // @ts-ignore
 import { Prisma, dmmf, Users, Projects } from '@prisma/client';
-import cors from '../../../../middlewares/cors';
-import { DBClient } from '../../../../middlewares/prisma-client';
-import { convertTable, getTableIncludes, isRelation, parseTable } from '../../../../data/convertables';
-import { deepFind } from '../../../../data/helper.functions';
+import cors from '@core-middlewares/cors';
+import { DBClient } from '@core-middlewares/prisma-client';
+import { convertTable, getTableIncludes, getTableName, isRelation, parseTable } from '@core-data/helpers/convertables';
+import { deepFind } from '@core-data/helpers';
 
 import merge from 'lodash.merge';
 import set from 'lodash.set';
@@ -28,7 +28,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 		return res.status(200).json({ errorMessage: 'Not authorized!' });
 
 	// password: hash,
-	const response: { ref, data } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+	const response: { ref: string, data: any } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
 
 	if(response.data === null || response.data === 'undefined')
 		return res.status(200).json({ err: true, errorMessage: 'Data must be filled in and not null' })
@@ -82,7 +82,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 
 				if (input)
 				{
-					search = await prismaClient.prisma[tbl].create({
+					// @ts-ignore
+					search = await prismaClient.prisma[getTableName(tbl)].create({
 						data: input,
 					});
 
@@ -109,7 +110,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 				}
 			});
 
-			const input = await inputData$;
+			const input: any = await inputData$;
 
 			// we need to start from the second value to get a value string
 			const lastStr = paths.slice(2, paths.length).join('.');
@@ -134,9 +135,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) =>
 				// return res.status(200).json({ message: "Insert completed", payload: null });
 
 				const outputData$ = await convertTable(tbl, fields, set(input, lastStr, newValue), uid);
-				const include = {}
+				const include: { [key: string]: boolean } = {}
 				include[paths[length-1]] = true;
-				search = await prismaClient.prisma[tbl].update({
+				// @ts-ignore
+				search = await prismaClient.prisma[getTableName(tbl)].update({
 					where: {
 						uid,
 					},

@@ -17,7 +17,7 @@ model User {
 	tokens          Token[]
 
 	metadata        UserMetaData?
-	projects        Project[] @relation(name: "members") // A user can have multiple projects.
+	projects        ProjectsOnUsers[] // A user can have multiple projects.
 	ownedProjects   Project[] @relation(name: "owner")
 
 	roles           String? @default("{}")
@@ -40,7 +40,7 @@ model UserMetaData {
 
 model Token {
 	@@map(name: "tokens")
-	uid           Int       @id @default(autoincrement())
+	id            Int       @id @default(autoincrement())
 	created_at    DateTime  @default(now())
 	updated_at    DateTime  @updatedAt
 	type          String    // TODO use TokenType when using mysql or postgresql
@@ -64,30 +64,41 @@ model Project {
 	metadata    ProjectMetaData? // Meta data of the project
    	tables      Table[]
 
-	memberId    String?
-	members     User[] @relation(name: "members", fields: [memberId], references: [uid]) // A project can belong to many members.
+	members     ProjectsOnUsers[] // A project can belong to many members.
 
 	// Relation fields
 	owner       User @relation(name: "owner", fields: [ownerId], references: [uid], onUpdate: SetNull, onDelete: SetNull)
     ownerId     String // Project belongs to a user
 }
 
+model ProjectsOnUsers {
+  project       Project     @relation(fields: [projectId], references: [uid])
+  projectId    	String 		// relation scalar field (used in the `@relation` attribute above)
+  user	  		User 		@relation(fields: [userId], references: [uid])
+  userId 		String 		// relation scalar field (used in the `@relation` attribute above)
+  assignedAt 	DateTime 	@default(now())
+  assignedBy 	String
+
+  @@id([projectId, userId])
+}
+
 model ProjectMetaData {
 	@@map(name: "project_metadata")
-	uid         Int @id @default(autoincrement())       // id
-    project     Project @relation(fields: [projectId], references: [uid])
-    projectId   String // Relation to the project.
-	created_at  DateTime @default(now())
-	updated_at  DateTime @updatedAt
-	title       String
-	alias       String
-	description String
-	private     Boolean
-	deleted     Boolean
-	languages   String
+	id         		Int @id @default(autoincrement())       // id
+    project     	Project @relation(fields: [projectId], references: [uid])
+    projectId   	String // Relation to the project.
+	created_at  	DateTime @default(now())
+	updated_at  	DateTime @updatedAt
+	title      		String
+	alias       	String
+	description 	String
+	private     	Boolean
+	deleted     	Boolean
+	languages   	String
+	relatedTables	String
 
 	// Pipeline settings
-	version     String
+	version     	String
 }
 
 model Table {
@@ -103,7 +114,7 @@ model Table {
 
 model TableData {
 	@@map(name: "table")
-	uid          Int @id @default(autoincrement())       // id
+	uid         Int @id @default(autoincrement())       // id
 	Table       Table @relation(fields: [tableId], references: [uid])
 	tableId     String
 	deleted     Boolean                                 //
