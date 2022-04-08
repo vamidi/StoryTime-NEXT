@@ -75,7 +75,7 @@ class FirebaseAuth implements Auth {
 		return {
 			'token_type': 'Bearer',
 			'access_token': token ? token.token : '',
-			'id_token': user ? await user.getIdToken() :'',
+			'id_token': user ? await user.getIdToken(true) :'',
 			'refresh_token': user ? user.refreshToken : '',
 			'expires_in': exp,
 		}

@@ -6,7 +6,7 @@ import { isFirebase, parseNodeData } from '../../../../../config/utils';
 export default authenticatedMiddleware(async (
 	req: NextApiRequest,
 	res: NextApiResponse,
-	_?: Claims,
+	_?:  Claims | string,
 ) => {
 
 	if(req.method !== 'GET') return res.status(401).json({ errorMessage: 'Not authorized!'});
@@ -65,7 +65,12 @@ export default authenticatedMiddleware(async (
 					}
 				}
 
-				response.push(table);
+				response.push({
+					...table,
+					data: {
+						...table.data
+					}
+				});
 			}
 
 			return res.status(200).json(response);

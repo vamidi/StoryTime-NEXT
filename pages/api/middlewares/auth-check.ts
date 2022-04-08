@@ -51,12 +51,15 @@ export interface Claims {
 
 // export declare type authenticated<T = any> = (req: NextApiRequest, res: NextApiResponse<T>, payload: Claims) => void | Promise<void>;
 
-export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiResponse, payload?: Claims) => void) => async (
+export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiResponse, payload?: Claims | string) => void) => async (
 	req: NextApiRequest,
 	res: NextApiResponse,
 ) => {
 	// Run cors
 	await cors(req, res);
+
+	console.log(req.url);
+
 
 	if(isFirebase)
 	{
@@ -74,11 +77,19 @@ export const authenticatedMiddleware = (fn: (req: NextApiRequest, res: NextApiRe
 
 			req.body = JSON.stringify({ ...req.body, uid: decodedToken.uid });
 		} catch (error: any) {
-			console.log(error);
+			// console.log(error);
 			const errorCode = error.errorInfo.code;
 			error.status = 401;
-			if (errorCode === 'auth/internal-error') {
-				error.status = 500;
+
+			switch(errorCode)
+			{
+				case 'auth/id-token-expired': // allow the user to refresh his/her credentials
+					if(req.url === '/api/v1/refresh') return fn(req, res, token);
+					break;
+				default:
+				case 'auth/internal-error':
+					error.status = 500;
+					break;
 			}
 
 			return res.status(error.status).json({ error: errorCode });

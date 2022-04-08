@@ -1,10 +1,10 @@
-import { DBClient } from '../../../middlewares/prisma-client';
+import { DBClient } from '@core-middlewares/prisma-client';
 import { User } from '@prisma/client';
-import { authenticatedMiddleware, Claims } from '../../../middlewares/auth-check';
+import { authenticatedMiddleware, Claims } from '@core-middlewares/auth-check';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { checkToken } from '../../../middlewares/cookie';
-import { database } from '../../../config/serverApp';
-import { isFirebase } from '../../../config/utils';
+import { checkToken } from '@core-middlewares/cookie';
+import { database } from '@core-config/serverApp';
+import { isFirebase } from '@core-config/utils';
 
 const prismaClient = DBClient.getInstance();
 
@@ -40,7 +40,7 @@ export default authenticatedMiddleware(async (
 
 		const user: User | null = await prismaClient.prisma.user.findFirst({
 			where: {
-				id: payload.uid,
+				uid: payload.uid,
 			},
 		});
 
@@ -53,7 +53,13 @@ export default authenticatedMiddleware(async (
 		result.projects = await prismaClient.prisma.project.findMany({
 			where: {
 				owner: uid,
-				memberId: uid,
+				AND: {
+					members: {
+						every: {
+							userId: uid,
+						}
+					}
+				},
 			},
 		});
 	}
